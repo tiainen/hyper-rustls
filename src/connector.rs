@@ -22,6 +22,7 @@ pub struct HttpsConnector<T> {
     http: T,
     tls_config: Arc<rustls::ClientConfig>,
     override_server_name: Option<String>,
+    ech_config: Option<Vec<u8>>,
 }
 
 impl<T> fmt::Debug for HttpsConnector<T> {
@@ -42,6 +43,7 @@ where
             http,
             tls_config: cfg.into(),
             override_server_name: None,
+            ech_config: None,
         }
     }
 }
@@ -98,13 +100,24 @@ where
                     hostname = trimmed;
                 }
 
-                let hostname = match rustls::ServerName::try_from(hostname) {
-                    Ok(dnsname) => dnsname,
-                    Err(_) => {
-                        let err = io::Error::new(io::ErrorKind::Other, "invalid dnsname");
-                        return Box::pin(async move { Err(Box::new(err).into()) });
+                let hostname = match &self.ech_config {
+                    Some(ech_config) => {
+                        let inner_dns_name = webpki::DnsNameRef::try_from_ascii(hostname.as_bytes()).unwrap();
+                        let ech = rustls::internal::msgs::ech::EncryptedClientHello::with_host_and_config_list(inner_dns_name, &ech_config)
+                            .unwrap();
+                        rustls::ServerName::EncryptedClientHello(Box::new(ech))
+                    },
+                    None => {
+                        match rustls::ServerName::try_from(hostname) {
+                            Ok(dnsname) => dnsname,
+                            Err(_) => {
+                                let err = io::Error::new(io::ErrorKind::Other, "invalid dnsname");
+                                return Box::pin(async move { Err(Box::new(err).into()) });
+                            }
+                        }
                     }
                 };
+
                 let connecting_future = self.http.call(dst);
 
                 let f = async move {

@@ -107,6 +107,7 @@ impl ConnectorBuilder<WantsSchemes> {
             tls_config: self.0.tls_config,
             https_only: true,
             override_server_name: None,
+            ech_config: None,
         })
     }
 
@@ -119,6 +120,7 @@ impl ConnectorBuilder<WantsSchemes> {
             tls_config: self.0.tls_config,
             https_only: false,
             override_server_name: None,
+            ech_config: None,
         })
     }
 }
@@ -131,6 +133,7 @@ pub struct WantsProtocols1 {
     tls_config: ClientConfig,
     https_only: bool,
     override_server_name: Option<String>,
+    ech_config: Option<Vec<u8>>,
 }
 
 impl WantsProtocols1 {
@@ -140,6 +143,7 @@ impl WantsProtocols1 {
             http: conn,
             tls_config: std::sync::Arc::new(self.tls_config),
             override_server_name: self.override_server_name,
+            ech_config: self.ech_config,
         }
     }
 
@@ -185,6 +189,12 @@ impl ConnectorBuilder<WantsProtocols1> {
     /// the URL will not affect certificate validation.
     pub fn with_server_name(mut self, override_server_name: String) -> Self {
         self.0.override_server_name = Some(override_server_name);
+        self
+    }
+
+    /// Assign ECH Config for the TLS stack
+    pub fn with_ech_config(mut self, ech_config: Vec<u8>) -> Self {
+        self.0.ech_config = Some(ech_config);
         self
     }
 }

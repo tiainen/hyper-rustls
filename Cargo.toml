@@ -14,9 +14,10 @@ http = "0.2"
 hyper = { version = "0.14", default-features = false, features = ["client"] }
 log = { version = "0.4.4", optional = true }
 rustls-native-certs = { version = "0.6", optional = true }
-rustls = { version = "0.20.1", default-features = false }
+rustls = { version = "=0.20.6", default-features = false }
 tokio = "1.0"
 tokio-rustls = { version = "0.23", default-features = false }
+webpki = { version = "0.22.0", features = ["alloc", "std"] }
 webpki-roots = { version = "0.22", optional = true }
 
 [dev-dependencies]
@@ -49,3 +50,6 @@ required-features = ["tokio-runtime"]
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[patch.crates-io]
+rustls = { git = "https://github.com/johanvos/rustls", branch = "ech-15" }
